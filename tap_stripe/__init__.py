@@ -585,13 +585,28 @@ def sync_stream(stream_name):
 
                 rec['updated'] = stream_obj_created
 
-                # Ensure the account ID is added to the rec if not the accounts
-                # stream.
-                if stream_name != 'accounts':
-                    rec['account_id'] = Context.config.get('account_id')
-
                 # sync stream if object is greater than or equal to the bookmark
                 if stream_obj_created >= stream_bookmark:
+                    # Ensure the account ID is added to the rec if not the accounts
+                    # stream.
+                    if stream_name != 'accounts':
+                        rec['account_id'] = Context.config.get('account_id')
+
+                    # Dispute Evidence col can be a string (legacy data) and now
+                    # an object:
+                    # https://stripe.com/docs/upgrades#2014-12-08
+                    #
+                    # This breaks downstream data sources that store
+                    # objects as JSON like Snowflake VARIANT column type.
+                    # Therefore we save the str data in another column and set
+                    # the original evidence to NULL.
+                    if stream_name == 'disputes':
+                        if isinstance(rec['evidence'], str):
+                            rec['evidence_legacy'] = rec['evidence']
+                            rec['evidence'] = None
+                        else:
+                            rec['evidence_legacy'] = None
+
                     rec = transformer.transform(
                         rec,
                         Context.get_catalog_entry(stream_name)['schema'],
@@ -900,8 +915,25 @@ def sync_event_updates(stream_name):
                 rec = reduce_foreign_keys(rec, stream_name)
                 rec["updated"] = events_obj.created
 
-                # Ensure the account ID is added to the rec
-                rec['account_id'] = Context.config.get('account_id')
+                # Ensure the account ID is added to the rec if not the accounts
+                # stream.
+                if stream_name != 'accounts':
+                    rec['account_id'] = Context.config.get('account_id')
+
+                # Dispute Evidence col can be a string (legacy data) and now
+                # an object:
+                # https://stripe.com/docs/upgrades#2014-12-08
+                #
+                # This breaks downstream data sources that store
+                # objects as JSON like Snowflake VARIANT column type.
+                # Therefore we save the str data in another column and set
+                # the original evidence to NULL.
+                if stream_name == 'disputes':
+                    if isinstance(rec['evidence'], str):
+                        rec['evidence_legacy'] = rec['evidence']
+                        rec['evidence'] = None
+                    else:
+                        rec['evidence_legacy'] = None
 
                 rec = transformer.transform(
                     rec,
