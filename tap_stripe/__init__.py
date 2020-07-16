@@ -141,9 +141,9 @@ class Context:
 
     @classmethod
     def get_schema(cls, stream_name):
-        stream = [
-            s for s in cls.catalog["streams"] if s["tap_stream_id"] == stream_name
-        ][0]
+        stream = [s for s in cls.catalog["streams"] if s["tap_stream_id"] == stream_name][
+            0
+        ]
         return stream["schema"]
 
     @classmethod
@@ -258,17 +258,14 @@ class DependencyException(Exception):
 def validate_dependencies():
     errs = []
     msg_tmpl = (
-        "Unable to extract {0} data. "
-        "To receive {0} data, you also need to select {1}."
+        "Unable to extract {0} data. " "To receive {0} data, you also need to select {1}."
     )
 
     for catalog_entry in Context.catalog['streams']:
         stream_id = catalog_entry['tap_stream_id']
         sub_stream_id = SUB_STREAMS.get(stream_id)
         if sub_stream_id:
-            if Context.is_selected(sub_stream_id) and not Context.is_selected(
-                stream_id
-            ):
+            if Context.is_selected(sub_stream_id) and not Context.is_selected(stream_id):
                 # throw error here
                 errs.append(msg_tmpl.format(sub_stream_id, stream_id))
 
@@ -303,9 +300,7 @@ def load_schemas():
 
     schema_path = get_abs_path('schemas')
     files = [
-        f
-        for f in os.listdir(schema_path)
-        if os.path.isfile(os.path.join(schema_path, f))
+        f for f in os.listdir(schema_path) if os.path.isfile(os.path.join(schema_path, f))
     ]
     for filename in files:
         path = get_abs_path('schemas') + '/' + filename
@@ -454,14 +449,12 @@ def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
     # all of them so this should always be safe.
     filters = {filter_key + "[gte]": start_date, filter_key + "[lt]": end_date}
 
-    # If the SDK Obj is the accounts stream and we also want to retrieve the 
+    # If the SDK Obj is the accounts stream and we also want to retrieve the
     # account itself from the API as the list call, will only return connected
     # accounts and not the account in use.
     if sdk_obj == stripe.Account:
         # Set this as a list so we can yield from it.
-        _context_account = [
-            sdk_obj.retrieve(Context.config.get('account_id'))
-        ]
+        _context_account = [sdk_obj.retrieve(Context.config.get('account_id'))]
         yield from _context_account
 
         # For account stream we should retrieve all accounts each time
@@ -475,9 +468,7 @@ def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
         limit = 20
 
     yield from sdk_obj.list(
-        limit=limit,
-        stripe_account=Context.config.get('account_id'),
-        **filters
+        limit=limit, stripe_account=Context.config.get('account_id'), **filters
     ).auto_paging_iter()
 
 
@@ -497,9 +488,7 @@ def sync_stream(stream_name):
     """
     LOGGER.info("Started syncing stream %s", stream_name)
 
-    stream_metadata = metadata.to_map(
-        Context.get_catalog_entry(stream_name)['metadata']
-    )
+    stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
     stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(
         stream_name
     )
@@ -531,7 +520,13 @@ def sync_stream(stream_name):
         sub_stream_bookmark = None
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        end_time = dt_to_epoch(utils.now())
+        if Context.config["end_date"]:
+            end_time = int(
+                utils.strptime_to_utc(Context.config["end_date"]).timestamp()
+            )
+        else:
+            end_time = dt_to_epoch(utils.now())
+
         window_size = int(
             Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE)
         )
@@ -619,9 +614,7 @@ def sync_stream(stream_name):
                     if stream_field_whitelist:
                         rec = apply_whitelist(rec, stream_field_whitelist)
 
-                    singer.write_record(
-                        stream_name, rec, time_extracted=extraction_time
-                    )
+                    singer.write_record(stream_name, rec, time_extracted=extraction_time)
 
                     Context.new_counts[stream_name] += 1
 
@@ -792,9 +785,7 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                 # Ensure the account ID is added to the rec
                 rec['account_id'] = Context.config.get('account_id')
 
-                singer.write_record(
-                    sub_stream_name, rec, time_extracted=extraction_time
-                )
+                singer.write_record(sub_stream_name, rec, time_extracted=extraction_time)
             if updates:
                 Context.updated_counts[sub_stream_name] += 1
             else:
@@ -850,7 +841,13 @@ def sync_event_updates(stream_name):
     ) or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
     date_window_start = max_created
-    date_window_end = max_created + 604800  # Number of seconds in a week
+
+    if Context.config["end_date"]:
+        date_window_end = int(
+            utils.strptime_to_utc(Context.config["end_date"]).timestamp()
+        )
+    else:
+        date_window_end = max_created + 604800  # Number of seconds in a week
 
     stop_paging = False
 
@@ -891,9 +888,7 @@ def sync_event_updates(stream_name):
                 continue
 
             # Syncing an event as its the first time we've seen it or its the most recent version
-            with Transformer(
-                singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING
-            ) as transformer:
+            with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
                 event_resource_metadata = metadata.to_map(
                     Context.get_catalog_entry(stream_name)['metadata']
                 )
