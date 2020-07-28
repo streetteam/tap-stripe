@@ -206,6 +206,12 @@
         "integer"
       ]
     },
+    "application_fee_amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
     "lines": {
       "type": [
         "null",
