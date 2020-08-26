@@ -179,10 +179,6 @@
         "string"
       ]
     },
-    "payment_method_details": {
-      "type": ["null", "object"],
-      "properties": {}
-    },
     "review": {
       "type": [
         "null",
