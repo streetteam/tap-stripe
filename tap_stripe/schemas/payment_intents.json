@@ -83,6 +83,13 @@
         "string"
       ]
     },
+    "payment_method_options": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
     "payment_method_types": {
       "type": ["null", "array"],
       "items": {}
@@ -178,10 +185,6 @@
         "null",
         "string"
       ]
-    },
-    "payment_method_details": {
-      "type": ["null", "object"],
-      "properties": {}
     },
     "review": {
       "type": [
