@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import stripe
 import stripe.error
@@ -835,6 +835,14 @@ def sync_event_updates(stream_name):
         Context.state, stream_name + '_events', 'updates_created'
     ) or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
+
+    # Stripe events API only saves the last 30 days of history.
+    # So we ensure when we call the API we only go back 30 days at max.
+    max_created_dt = datetime.fromtimestamp(max_created, timezone.utc)
+    max_created_dt_limit = utils.now() - timedelta(days=30)
+    if max_created_dt < max_created_dt_limit:
+        max_created = max_created_dt_limit.timestamp()
+
     date_window_start = max_created
 
     if Context.config["end_date"]:
