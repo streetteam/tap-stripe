@@ -515,7 +515,7 @@ def sync_stream(stream_name):
         sub_stream_bookmark = None
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        if Context.config["end_date"]:
+        if Context.config.get('end_date'):
             end_time = int(
                 utils.strptime_to_utc(Context.config["end_date"]).timestamp()
             )
@@ -841,11 +841,11 @@ def sync_event_updates(stream_name):
     max_created_dt = datetime.fromtimestamp(max_created, timezone.utc)
     max_created_dt_limit = utils.now() - timedelta(days=30)
     if max_created_dt < max_created_dt_limit:
-        max_created = max_created_dt_limit.timestamp()
+        max_created = int(max_created_dt_limit.timestamp())
 
     date_window_start = max_created
 
-    if Context.config["end_date"]:
+    if Context.config.get('end_date'):
         date_window_end = int(
             utils.strptime_to_utc(Context.config["end_date"]).timestamp()
         )
