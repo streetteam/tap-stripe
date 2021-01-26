@@ -81,6 +81,7 @@ celerybeat-schedule
 # virtualenv
 venv/
 ENV/
+.virtualenv/
 
 # Spyder project settings
 .spyderproject
@@ -95,7 +96,9 @@ ENV/
 # Custom stuff
 env.sh
 config.json
+catalog.json
 .autoenv.zsh
+.idea/
 
 rsa-key
 tags
