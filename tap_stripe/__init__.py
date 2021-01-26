@@ -509,7 +509,7 @@ def sync_stream(stream_name):
     ) or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     bookmark = stream_bookmark
     if stream_name == 'events':
-        bookmark = confine_events_start_date(bookmark)
+        bookmark = _confine_events_start_date(bookmark)
 
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)
@@ -841,7 +841,7 @@ def recursive_to_dict(some_obj):
     return some_obj
 
 
-def confine_events_start_date(start_date: Union[int, float]):
+def _confine_events_start_date(start_date: Union[int, float]):
     # Stripe events API only saves the last 30 days of history.
     # So we ensure when we call the API we only go back 30 days at max.
 
@@ -868,7 +868,7 @@ def sync_event_updates(stream_name):
     ) or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
 
-    date_window_start = confine_events_start_date(max_created)
+    date_window_start = _confine_events_start_date(max_created)
 
     if Context.config.get('end_date'):
         date_window_end = int(
