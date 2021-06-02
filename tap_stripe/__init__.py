@@ -4,6 +4,7 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta, timezone
+import faulthandler
 
 from typing import Union
 
@@ -14,6 +15,7 @@ from stripe.stripe_object import StripeObject
 import singer
 from singer import Transformer, metadata, metrics, utils
 
+faulthandler.enable()
 REQUIRED_CONFIG_KEYS = ["start_date", "account_id", "client_secret"]
 STREAM_SDK_OBJECTS = {
     'accounts': {'sdk_object': stripe.Account, 'key_properties': ['id']},
@@ -214,7 +216,7 @@ def configure_stripe_client():
     stripe.default_http_client = client
     # Set stripe logging to INFO level
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#logging
-    logging.getLogger('stripe').setLevel(logging.INFO)
+    logging.getLogger('stripe').setLevel(logging.DEBUG)
     # Verify connectivity
     account = stripe.Account.retrieve(Context.config.get('account_id'))
     LOGGER.info(
